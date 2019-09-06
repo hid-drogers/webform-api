@@ -1,0 +1,8 @@
+TODO
+====
+
+-Move to a new hdi-rest project, in a new hdi-common repository
+	-All packages/files that are NOT under "com.hdisolutions.oltpservices", and are
+ 	part of the generic "client specific processing" rest framework
+ 
+ 

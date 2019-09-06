@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorInterval="30">
+        <Properties>
+                <Property name="fileLogDir">/var/log/webform-api</Property>
+                <Property name="fileLogPattern">%d %p %c: %m%n</Property>
+        </Properties>
+        <Appenders>
+                <Console name="Console" target="SYSTEM_OUT">
+                        <PatternLayout pattern="%d [%-15.15t] %-5p %-30.30c{1} %m%n"/>
+                </Console>
+                <RollingFile name="File" fileName="${fileLogDir}/webform-api.log"
+                             filePattern="${fileLogDir}/palogic-%d{yyyy-MM-dd}.log.gz">
+                        <PatternLayout pattern="${fileLogPattern}"/>
+                        <Policies>
+                                <TimeBasedTriggeringPolicy interval="1"/>
+                        </Policies>
+                        <DefaultRolloverStrategy>
+                                <Delete basePath="${fileLogDir}" maxDepth="1">
+                                        <IfFileName glob="palogic-*.log.gz" />
+                                        <IfLastModified age="30d" />
+                                </Delete>
+                        </DefaultRolloverStrategy>
+                </RollingFile>
+        </Appenders>
+
+        <Loggers>
+                <Logger name="com.hdisolutions" level="debug"/>
+
+                <Root level="info">
+                        <AppenderRef ref="File"/>
+                </Root>
+        </Loggers>
+</Configuration>
