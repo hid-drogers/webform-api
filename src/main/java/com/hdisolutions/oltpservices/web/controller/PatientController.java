@@ -13,8 +13,7 @@ import com.hdisolutions.model.dto.BaseInvokerResponse;
 import com.hdisolutions.web.controller.HDIRestController;
 
 /**
- * Processes all CRUD requests for Patient domain entity. This includes getting aggregate data
- * like count (matching criteria).
+ * Processes all CRUD requests for Patient domain entity
  * 
  * Known invokers: WebForm
  * Know clients: bcbsal, sscripts, rxbenefits, rxsense
@@ -27,10 +26,10 @@ import com.hdisolutions.web.controller.HDIRestController;
 @RequestMapping(value="/api/patients")
 public class PatientController extends HDIRestController {
 
-	@RequestMapping(value = "/count", method = RequestMethod.GET, consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<BaseInvokerResponse> getPatientCount(HttpServletRequest request,
-															   HttpServletResponse response) {
+	@RequestMapping(value = "/search", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<BaseInvokerResponse> getPatients(HttpServletRequest request,
+														   HttpServletResponse response) {
 		
-		return process(request, response, "PatientController", "getPatientCount");
+		return process(request, response, "PatientController", "getPatients");
 	}
 }

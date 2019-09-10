@@ -70,7 +70,7 @@ public class GetDrugsProcessor extends BaseRestProcessor {
 		
 		List<Drug> drugList = drugService.findByFullNameStartingWith(client, getDrugCountCriteriaModel.getName());
 		List<DrugDTO> drugDTOList = new ArrayList<DrugDTO>();
-		drugDTOList = CollectionUtils.transform(drugList, new DrugTransformer());
+		drugDTOList = CollectionUtils.transform(drugList, new DrugListTransformer());
 		
 		recordCountResponse.setDrugs(drugDTOList);
 		log.info("Drug record count: " + (drugList == null?0:drugList.size()));
@@ -104,7 +104,7 @@ public class GetDrugsProcessor extends BaseRestProcessor {
 	}
 }
 
-class DrugTransformer implements Transformer {
+class DrugListTransformer implements Transformer {
 
 	@Override
 	public Object transform(Object drug) {

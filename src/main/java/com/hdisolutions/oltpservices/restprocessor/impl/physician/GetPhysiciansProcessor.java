@@ -1,6 +1,5 @@
 package com.hdisolutions.oltpservices.restprocessor.impl.physician;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -10,10 +9,11 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.plexus.util.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.core.CollectionUtils;
+import org.springframework.cglib.core.Transformer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import com.hdisolutions.model.domain.oltp.Physician;
@@ -74,14 +74,15 @@ public class GetPhysiciansProcessor extends BaseRestProcessor {
 		return responseEntity;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected ResponseEntity<BaseInvokerResponse> getResponseWithPhysicians(String client, String npi){
 		
 		GetPhysiciansResponse getPhysiciansResponse = (GetPhysiciansResponse)makeResponseEntityObject();
 		List<Physician> physicianList = physicianService.getPhysicians(client, npi);
-		List<PhysicianDTO> physicianDTOList = transform(physicianList);
+		List<PhysicianDTO> physicianDTOList = CollectionUtils.transform(physicianList, new PhysicianListTransformer());
 		getPhysiciansResponse.setPhysicians(physicianDTOList);
 		
-		log.info("Physicians found for passed 'npi': " + (CollectionUtils.isEmpty(physicianList)?0:physicianList.size()));
+		log.info("Physicians found for passed npi: " + (physicianDTOList == null?0:physicianList.size()));
 		
 		ResponseEntity<BaseInvokerResponse> responseEntity = new ResponseEntity<BaseInvokerResponse>(getPhysiciansResponse, HttpStatus.OK);
 		
@@ -120,16 +121,16 @@ public class GetPhysiciansProcessor extends BaseRestProcessor {
 		return PhysicianCriteriaModel.class;
 	}
 
-	private List<PhysicianDTO> transform(List<Physician> physicianList){
-	
-		List<PhysicianDTO> physicianDTOList = new ArrayList<PhysicianDTO>();
-		
-		for(Physician physician: physicianList) {
-			PhysicianDTO dto = new PhysicianDTO();
-			BeanUtils.copyProperties(physician, dto);
-			physicianDTOList.add(dto);
+	class PhysicianListTransformer implements Transformer {
+
+		@Override
+		public Object transform(Object physician) {
+			
+			PhysicianDTO physicianDTO = new PhysicianDTO();
+			BeanUtils.copyProperties(physician, physicianDTO);
+			
+			return physicianDTO;
 		}
-		
-		return physicianDTOList;
-	}	
+	}
+	
 }
