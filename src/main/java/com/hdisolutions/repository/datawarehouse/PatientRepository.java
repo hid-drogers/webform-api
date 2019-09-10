@@ -1,6 +1,7 @@
 package com.hdisolutions.repository.datawarehouse;
 
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -12,21 +13,21 @@ import com.hdisolutions.model.domain.datawarehouse.Patient;
 @Repository
 public interface PatientRepository extends CrudRepository<Patient, Integer> {
 	
-	@Query("SELECT count(p) FROM Patient p WHERE p.memberId like :memberId% " +
+	@Query("SELECT p FROM Patient p WHERE p.memberId like :memberId% " +
 			"AND UPPER(p.firstName) like :firstName% " +
 			"AND UPPER(p.lastName) like :lastName% " +
 			"AND p.dateOfBirth = :dateOfBirth")
-	Integer getCountByMemberIdAndOtherCriteria(@Param("memberId") String memberId,
-											   @Param("firstName") String firstName,
-											   @Param("lastName") String lastName,
-											   @Param("dateOfBirth") Date dateOfBirth);
+	List<Patient> findAllByMemberIdAndOtherCriteria(@Param("memberId") String memberId,
+											        @Param("firstName") String firstName,
+											        @Param("lastName") String lastName,
+											        @Param("dateOfBirth") Date dateOfBirth);
 	
 	@Query("SELECT count(p) FROM Patient p WHERE p.altMemberId like :memberId% " +
 			"AND UPPER(p.firstName) like :firstName% " +
 			"AND UPPER(p.lastName) like :lastName% " +
 			"AND p.dateOfBirth = :dateOfBirth")
-	Integer getCountByAltMemberIdAndOtherCriteria(@Param("memberId") String memberId,
-												  @Param("firstName") String firstName,
-												  @Param("lastName") String lastName,
-												  @Param("dateOfBirth") Date dateOfBirth);	
+	List<Patient> findAllByAltMemberIdAndOtherCriteria(@Param("memberId") String memberId,
+												       @Param("firstName") String firstName,
+												       @Param("lastName") String lastName,
+												       @Param("dateOfBirth") Date dateOfBirth);	
 }

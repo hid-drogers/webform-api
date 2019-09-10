@@ -34,9 +34,9 @@ public class RestConfig {
   // Processor names
   public static final String GET_PHYSICIANS_PROCESSOR = "GetPhysiciansProcessor";
   
-  public static final String GET_PATIENT_COUNT_PROCESSOR = "GetPatientCountProcessor";
-  public static final String RXSENSE_GET_PATIENT_COUNT_PROCESSOR = "RxSenseGetPatientCountProcessor";
-  public static final String RXBENEFITS_GET_PATIENT_COUNT_PROCESSOR = "RxBenefitsGetPatientCountProcessor";
+  public static final String GET_PATIENTS_PROCESSOR = "GetPatientsProcessor";
+  public static final String RXSENSE_GET_PATIENTS_PROCESSOR = "RxSenseGetPatientsProcessor";
+  public static final String RXBENEFITS_GET_PATIENTS_PROCESSOR = "RxBenefitsGetPatientsProcessor";
   
   public static final String GET_DRUGS_PROCESSOR = "GetDrugsProcessor";
   
@@ -69,17 +69,17 @@ public class RestConfig {
 
   private void addPatientControllerProcessors(Map<ControllerMethodClientMapKey, String> processorMap) {
 	  
-	  ControllerMethodClientMapKey getPatientCountMethodKey = new ControllerMethodClientMapKey(PATIENT_CONTROLLER, "getPatientCount", DEFAULT);
-	  processorMap.put(getPatientCountMethodKey, GET_PATIENT_COUNT_PROCESSOR);
+	  ControllerMethodClientMapKey getPatientsMethodKey = new ControllerMethodClientMapKey(PATIENT_CONTROLLER, "getPatients", DEFAULT);
+	  processorMap.put(getPatientsMethodKey, GET_PATIENTS_PROCESSOR);
 	  
 	  // Client specific implementations
-	  ControllerMethodClientMapKey rxBenefitsGetPatientCountMethodKey =
+	  ControllerMethodClientMapKey rxBenefitsGetPatientsMethodKey =
 			  new ControllerMethodClientMapKey(PATIENT_CONTROLLER, "getPatientCount", HDIClient.RXBENEFITS.getName());
-	  processorMap.put(rxBenefitsGetPatientCountMethodKey, RXBENEFITS_GET_PATIENT_COUNT_PROCESSOR);
+	  processorMap.put(rxBenefitsGetPatientsMethodKey, RXBENEFITS_GET_PATIENTS_PROCESSOR);
 	  
-	  ControllerMethodClientMapKey rxSenseGetPatientCountMethodKey =
+	  ControllerMethodClientMapKey rxSenseGetPatientsMethodKey =
 			  new ControllerMethodClientMapKey(PATIENT_CONTROLLER, "getPatientCount", HDIClient.RXSENSE.getName());
-	  processorMap.put(rxSenseGetPatientCountMethodKey, RXSENSE_GET_PATIENT_COUNT_PROCESSOR);			  
+	  processorMap.put(rxSenseGetPatientsMethodKey, RXSENSE_GET_PATIENTS_PROCESSOR);			  
   }
   
   

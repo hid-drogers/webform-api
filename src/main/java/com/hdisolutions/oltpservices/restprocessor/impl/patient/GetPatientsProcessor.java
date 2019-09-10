@@ -3,29 +3,35 @@ package com.hdisolutions.oltpservices.restprocessor.impl.patient;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.plexus.util.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.core.CollectionUtils;
+import org.springframework.cglib.core.Transformer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
+import com.hdisolutions.model.domain.datawarehouse.Patient;
 import com.hdisolutions.model.dto.BaseInvokerRequest;
 import com.hdisolutions.model.dto.BaseInvokerResponse;
-import com.hdisolutions.oltpservices.model.dto.common.GenericRecordsFoundResponse;
-import com.hdisolutions.oltpservices.model.dto.patient.GetPatientCountCriteriaModel;
+import com.hdisolutions.oltpservices.model.dto.patient.GetPatientsCriteriaModel;
+import com.hdisolutions.oltpservices.model.dto.patient.GetPatientsResponseModel;
+import com.hdisolutions.oltpservices.model.dto.patient.PatientDTO;
 import com.hdisolutions.restprocessor.impl.BaseRestProcessor;
 import com.hdisolutions.service.datawarehouse.PatientService;
 
 @Component
-public class GetPatientCountProcessor extends BaseRestProcessor {
+public class GetPatientsProcessor extends BaseRestProcessor {
 
-	private static final Log log = LogFactory.getLog(GetPatientCountProcessor.class);
+	private static final Log log = LogFactory.getLog(GetPatientsProcessor.class);
 
 	@Value( "${msg.err.validation.patient.request.params.cannot.be.empty}" )
 	private String msgRequestParamsCannotBeEmpty;	
@@ -41,26 +47,15 @@ public class GetPatientCountProcessor extends BaseRestProcessor {
 	public ResponseEntity<BaseInvokerResponse> validateRequest(ContentCachingRequestWrapper requestWrapper,
 															   ResponseEntity<BaseInvokerResponse> authResponseEntity) {
 		
-		GetPatientCountCriteriaModel getPatientCountParamsModel = (GetPatientCountCriteriaModel)getRequestModel(requestWrapper, getRequestEntityClass());
+		GetPatientsCriteriaModel getPatientsCriteriaModel = (GetPatientsCriteriaModel)getRequestModel(requestWrapper, getRequestEntityClass());
 		BaseInvokerResponse responseModel = new BaseInvokerResponse();
 		
-		HttpStatus returnStatus = validatePatientSearchAttributes(getPatientCountParamsModel, responseModel);
+		HttpStatus returnStatus = validatePatientSearchAttributes(getPatientsCriteriaModel, responseModel);
 		
 		return new ResponseEntity<BaseInvokerResponse>(responseModel, returnStatus);		
 	}
 	
-	@Override
-	protected BaseInvokerRequest getRequestModel(ContentCachingRequestWrapper requestWrapper, Class<BaseInvokerRequest> classType) {
-		
-		String memberId = requestWrapper.getParameter("memberId");
-		String firstName = requestWrapper.getParameter("firstName");
-		String lastName = requestWrapper.getParameter("lastName");
-		String dateOfBirth = requestWrapper.getParameter("dateOfBirth");
-		
-		return new GetPatientCountCriteriaModel(firstName, lastName, memberId, dateOfBirth);
-	}
-	
-	protected HttpStatus validatePatientSearchAttributes(GetPatientCountCriteriaModel paramsModel, BaseInvokerResponse responseModel) {
+	protected HttpStatus validatePatientSearchAttributes(GetPatientsCriteriaModel paramsModel, BaseInvokerResponse responseModel) {
 		
 		HttpStatus returnStatus = HttpStatus.OK;
 		
@@ -87,49 +82,45 @@ public class GetPatientCountProcessor extends BaseRestProcessor {
 															  ResponseEntity<BaseInvokerResponse> responseEntityFromAuth) {
 		
 		// Get a list of patients matching ALL passed criteria. Set recordsFound attribute to size of List (or 0 if empty).
-		BaseInvokerRequest requestModel = null;
+		BaseInvokerRequest requestModel = getRequestModel(requestWrapper, getRequestEntityClass());
 		ResponseEntity<BaseInvokerResponse> responseEntity = null;
 		
-		try {
-			requestModel = getRequestModel(requestWrapper, getRequestEntityClass());
-		}catch(Exception e) {
-			responseEntity = makeServerErrorResponse(e);
-		}
-		
 		if(responseEntity == null) {
-			responseEntity = getResponseWithPatientCount(getClient(requestWrapper), requestModel, requestWrapper);			
+			responseEntity = getResponseWithPatients(getClient(requestWrapper), requestModel, requestWrapper);			
 		}
 		
 		return responseEntity;
 	}
 
-	// Some client extensions of this class override this method
-	protected ResponseEntity<BaseInvokerResponse> getResponseWithPatientCount(String client, BaseInvokerRequest patientCriteriaModel,
-																			  ContentCachingRequestWrapper requestWrapper) {
+	protected ResponseEntity<BaseInvokerResponse> getResponseWithPatients(String client, BaseInvokerRequest patientCriteriaModel,
+																		  ContentCachingRequestWrapper requestWrapper) {
 		
-		GenericRecordsFoundResponse getRecordCountResponse = (GenericRecordsFoundResponse)makeResponseEntityObject();
-		GetPatientCountCriteriaModel requestObj = (GetPatientCountCriteriaModel)patientCriteriaModel;
+		GetPatientsResponseModel getPatientsResponseModel = (GetPatientsResponseModel)makeResponseEntityObject();
+		GetPatientsCriteriaModel requestObj = (GetPatientsCriteriaModel)patientCriteriaModel;
 		
-		Integer recordCount = getPatientCount(requestObj, requestWrapper);
-		getRecordCountResponse.setRecordsFound(recordCount);
-		log.info("Patient record count: " + recordCount);
+		List<PatientDTO> patientDTOList = getPatientList(requestObj, requestWrapper);
+		getPatientsResponseModel.setPatients(patientDTOList);
+		log.info("Patient record count: " + (patientDTOList == null?0:patientDTOList.size()));
 		
-		return new ResponseEntity<BaseInvokerResponse>(getRecordCountResponse, HttpStatus.OK);
+		return new ResponseEntity<BaseInvokerResponse>(getPatientsResponseModel, HttpStatus.OK);
 	}
 	
-	protected Integer getPatientCount(GetPatientCountCriteriaModel requestObj, ContentCachingRequestWrapper requestWrapper){
-		
-		Integer recordCount = null;
+	// Some client extensions of this class override this method
+	@SuppressWarnings("unchecked")
+	protected List<PatientDTO> getPatientList(GetPatientsCriteriaModel requestObj, ContentCachingRequestWrapper requestWrapper){
 		
 		Date dateOfBirth = getDateOfBirthDateFromString(requestObj.getDateOfBirth());
-		recordCount = getPatientCountFromService(requestObj, requestWrapper, dateOfBirth);
 		
-		return recordCount;
+		List<Patient> patientList = getPatientsFromService(requestObj, requestWrapper, dateOfBirth);
+		List<PatientDTO> patientDTOList = CollectionUtils.transform(patientList, new PatientListTransformer());
+		
+		return patientDTOList;
 	}
 	
-	protected Integer getPatientCountFromService(GetPatientCountCriteriaModel requestObj, ContentCachingRequestWrapper requestWrapper, Date dateOfBirth) {
-		return patientDWService.getPatientCountByMemberIdAndOtherCriteria(getClient(requestWrapper), requestObj.getMemberId(), 
-				 														  requestObj.getFirstName(), requestObj.getLastName(), dateOfBirth);		
+	protected List<Patient> getPatientsFromService(GetPatientsCriteriaModel requestObj, ContentCachingRequestWrapper requestWrapper,
+												   Date dateOfBirth) {
+		return patientDWService.getPatientsByMemberIdAndOtherCriteria(getClient(requestWrapper), requestObj.getMemberId(), 
+				 													  requestObj.getFirstName(), requestObj.getLastName(), dateOfBirth);		
 	}
 	
 	protected Date getDateOfBirthDateFromString(String dateOfBirthString) {
@@ -148,13 +139,24 @@ public class GetPatientCountProcessor extends BaseRestProcessor {
 	
 	@Override
 	protected BaseInvokerResponse makeResponseEntityObject() {
-		return new GenericRecordsFoundResponse();
+		return new GetPatientsResponseModel();
 	}
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	protected Class getRequestEntityClass() {
-		return GetPatientCountCriteriaModel.class;
+		return GetPatientsCriteriaModel.class;
 	}
+}
 
+class PatientListTransformer implements Transformer {
+
+	@Override
+	public Object transform(Object patient) {
+		
+		PatientDTO patientDTO = new PatientDTO();
+		BeanUtils.copyProperties(patient, patientDTO);
+		
+		return patientDTO;
+	}
 }

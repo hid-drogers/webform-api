@@ -57,7 +57,7 @@ public class HDIRestController {
 	protected ResponseEntity<BaseInvokerResponse> process(HttpServletRequest request, HttpServletResponse response, 
 										    		      String controllerClassSimpleName, String controllerMethodName) {
 		
-		log.info("\n\nRequest received, authenticating invoker/client");
+		log.info("\n\n" + request.getMethod() + " request received for URI " + request.getRequestURI() + ". Authenticating invoker/client.");
 		ResponseEntity<BaseInvokerResponse> responseEntity = null;
 		
 		try {
